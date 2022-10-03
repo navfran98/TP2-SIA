@@ -2,50 +2,51 @@ import random
 import numpy as np
 
 class AlgoritmoPerceptronSimple:
-    def __init__(self, entrada, salida, tasaAprendizaje):
-        entrada = entrada
-        salida = salida
-        tasaAprendizaje = tasaAprendizaje
+    def __init__(self, stimulus, expected_output, learningRate):
+        self.stimulus = stimulus
+        self.expected_output = expected_output
+        self.learningRate = learningRate
 
-    def calcularExcitacion(self, w, u):
-        aux = self.entrada[u]
+    def calculateActivation(self, w, u):
+        aux = self.stimulus[u]
         h = 0
         for i in range(0, len(aux)):
-            h += w[i] + aux[i]
-        return h
+            h += w[i] * aux[i]
+        if h < 0:
+            return -1
+        else:
+            return 1
     
-    def calcularError(self, w)):
-        for i in range(0, len(self.entrada)):
-            h = self.calcularExcitacion(w, i)
-            if h < 0:
-                O = -1
-            else:
-                O = 1
-            np.abs(self.salida[i] - O)
+    def calculateError(self, w):
+        error = 0
+        for i in range(0, len(self.stimulus)):
+            o = self.calculateActivation(w, i)
+            error += np.abs(self.expected_output[i] - o)
+        return error
+        
     
     def run(self):
         i = 0
-        w = np.zeros(len(self.salida), 1)
+        w = np.zeros(len(self.stimulus[0]))
         error = 0
-        error_min = 100000000
-        cota = 1000
-        while error_min > 0 and i < 1000:
-            u = random.randint(0, len(self.entrada) - 1)
-            h = self.calcularExcitacion(w, u)
-            if h < 0:
-                O = -1
-            else:
-                O = 1
-            deltaW = self.tasaAprendizaje * (self.salida[u] - O) * self.entrada[u]
-            w = w + deltaW
-            error = self.calcularError(w)
+        error_min = 10000000000
+        cota = 100000
+        while error_min > 0 and i < cota:
+            u = random.randint(0, len(self.stimulus) - 1)
+            o = self.calculateActivation(w, u)
+            deltaW = ((self.expected_output[u] - o) * self.learningRate) * self.stimulus[u]
+            w = np.add(w , deltaW)
+            error = self.calculateError(w)
             if error < error_min:
                 error_min = error
                 w_min = w
             i += 1
+        if(i >= cota):
+            print("Corté por cota")
+        return w
 
-entrada = [[-1, 1], [1, -1], [-1, -1], [1, 1]]
-salida = [−1, −1, −1, 1]
-
-A = AlgoritmoPerceptronSimple(entrada, salida, 0.5)
-A.run()
+stimulus = np.array([[1,-1, 1], [1,1, -1], [1,-1, -1], [1,1, 1]])
+expected_output = np.array([1, 1, -1, -1])
+A = AlgoritmoPerceptronSimple(stimulus, expected_output, 0.5)
+print(A.run())
+#print(np.multiply(2,[1,1]))
