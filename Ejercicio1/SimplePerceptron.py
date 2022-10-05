@@ -1,18 +1,19 @@
-import random
 import numpy as np
+import random
 
-class AlgoritmoPerceptronSimple:
-    def __init__(self, stimulus, expected_output, learningRate):
+class SimplePerceptron:
+    def __init__(self, stimulus, expected_output, learningRate, threshold):
         self.stimulus = stimulus
         self.expected_output = expected_output
         self.learningRate = learningRate
+        self.threshold = threshold
 
     def calculateActivation(self, w, u):
         aux = self.stimulus[u]
         h = 0
         for i in range(0, len(aux)):
             h += w[i] * aux[i]
-        if h < 0:
+        if (h - self.threshold) < 0:
             return -1
         else:
             return 1
@@ -23,7 +24,10 @@ class AlgoritmoPerceptronSimple:
             o = self.calculateActivation(w, i)
             error += np.abs(self.expected_output[i] - o)
         return error
-        
+    
+    def calculateDeltaW(self,w,u):
+        o = self.calculateActivation(w,u)
+        return ((self.expected_output[u] - o) * self.learningRate) * self.stimulus[u]
     
     def run(self):
         i = 0
@@ -33,8 +37,7 @@ class AlgoritmoPerceptronSimple:
         cota = 100000
         while error_min > 0 and i < cota:
             u = random.randint(0, len(self.stimulus) - 1)
-            o = self.calculateActivation(w, u)
-            deltaW = ((self.expected_output[u] - o) * self.learningRate) * self.stimulus[u]
+            deltaW = self.calculateDeltaW(w,u)
             w = np.add(w , deltaW)
             error = self.calculateError(w)
             if error < error_min:
@@ -43,10 +46,4 @@ class AlgoritmoPerceptronSimple:
             i += 1
         if(i >= cota):
             print("Corté por cota")
-        return w
-
-stimulus = np.array([[1,-1, 1], [1,1, -1], [1,-1, -1], [1,1, 1]])
-expected_output = np.array([1, 1, -1, -1])
-A = AlgoritmoPerceptronSimple(stimulus, expected_output, 0.5)
-print(A.run())
-#print(np.multiply(2,[1,1]))
+        return w_min
