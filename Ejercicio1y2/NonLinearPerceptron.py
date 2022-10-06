@@ -8,6 +8,7 @@ class NonLinearPerceptron:
         self.expected_output = expected_output
         self.learningRate = learningRate
         self.beta = beta
+        self.w = np.zeros(len(self.stimulus[0]))
     
     def getH(self, w, u): #o
         aux = self.stimulus[u]
@@ -40,18 +41,17 @@ class NonLinearPerceptron:
     
     def run(self):
         i = 0
-        w = np.zeros(len(self.stimulus[0]))
         error = 0
         error_min = 10000000000
         cota = 100000
-        while error_min > 0 and i < cota:
+        while error_min > 0.001 and i < cota:
             u = random.randint(0, len(self.stimulus) - 1)
-            deltaW = self.calculateDeltaW(w,u)
-            w = np.add(w , deltaW)
-            error = self.calculateError(w)
+            deltaW = self.calculateDeltaW(self.w,u)
+            self.w = np.add(self.w , deltaW)
+            error = self.calculateError(self.w)
             if error < error_min:
                 error_min = error
-                w_min = w
+                w_min = self.w
             i += 1
         if(i >= cota):
             print("Corté por cota")
