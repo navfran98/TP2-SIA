@@ -22,6 +22,10 @@ class NonLinearPerceptron:
             ret.append(2*((out-self.min)/range)-1)
         return np.array(ret)
 
+    def escalate_value(self, value):
+        range = self.max - self.min
+        return 2*((value-self.min)/range)-1
+
     def zScore(self, inputs):
         mean = np.mean(inputs)
         standard_deviation = np.std(inputs)
@@ -79,8 +83,16 @@ class NonLinearPerceptron:
             i += 1
         if(i >= cota):
             print("Corté por cota")
-            plt.semilogy()
-            plt.plot(it[1:], e[1:])
-            plt.show()
+            #plt.semilogy()
+            #plt.plot(it[1:], e[1:])
+            #plt.show()
+            self.w = w_min
+
         return w_min
+
+    def test(self, stimulus):
+        ret = 0
+        for i in range(0,len(stimulus)):
+            ret += stimulus[i] * self.w[i]
+        return np.tanh(self.beta*ret)
 

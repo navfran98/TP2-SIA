@@ -49,18 +49,23 @@ def runEj1ExclusiveOr():
     
 def runEj2Linear():
     #Sacar de csv los stimuli ([x1,x2,x3]) y los expected_outputs (y)
-    stimulus, expected_output = parseCSV("./Ejercicio1y2/TP2-ej2-conjunto.csv")
+    stimulus, expected_output = parseCSV("./Ejercicio1y2/aprendizaje.csv")
     learningRate = 0.001
     A = LinearPerceptron(stimulus, expected_output, learningRate)
     print(A.run())
 
 def runEj2NonLinear():
     #Sacar de csv los stimuli ([x1,x2,x3]) y los expected_outputs (y)
-    stimulus, expected_output = parseCSV("./Ejercicio1y2/TP2-ej2-conjunto.csv")
+    stimulus, expected_output = parseCSV("./Ejercicio1y2/aprendizaje.csv")
+    test_stimulus, test_expected = parseCSV("./Ejercicio1y2/testeo.csv")
     learningRate = 0.001
     beta = 0.4
     A = NonLinearPerceptron(stimulus, expected_output, learningRate, beta)
-    print(A.run())
+    w = A.run()
+
+    print(A.test(test_stimulus[0])- A.escalate_value(test_expected[0]))
+    
+    print(w)
 
 # ---------------------------------------------------------------------------- #
 
