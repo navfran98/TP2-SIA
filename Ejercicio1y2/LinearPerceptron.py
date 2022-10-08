@@ -12,7 +12,6 @@ class LinearPerceptron:
         h = 0
         for i in range(0, len(aux)):
             h += float(w[i]) * float(aux[i])
-        
         return h
     
     def calculateError(self, w):
