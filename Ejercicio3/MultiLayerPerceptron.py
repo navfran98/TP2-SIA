@@ -48,8 +48,12 @@ class MultiLayerPerceptron:
         error_min = 1000000
         cota = 100000
         i = 0
+        u = 0
         while error_min > 0.0001 and i < cota:
-            u = random.randint(0,len(self.stimuli)-1)
+            u += 1
+            if(u >= len(self.stimuli)):
+                u = 0
+            #u = random.randint(0,len(self.stimuli)-1)
             self.propagation(self.stimuli[u],0)
             self.calculate_exit()
             self.backtracking(u)
@@ -163,17 +167,16 @@ class MultiLayerPerceptron:
 
 # ----------------------------------
 def runEj3_1():
-    optimus = MultiLayerPerceptron(stimuli,expected_output,0.01,1,2)
-    w1,w2 = optimus.run()
+    optimus = MultiLayerPerceptron(stimuli,expected_output,0.001,1,3)
+    optimus.run()
 
 
     for st in optimus.stimuli:
-        print(f'{st} -> {optimus.propagation_test2(st,w1,w2)}')
+        print(f'{st} -> {optimus.propagation_test(st)}')
 
-    A = w1
-    B = w2
 
-    xs = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
+
+    """ xs = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
     y1 = []
     y2 = []
     for x in xs:
@@ -188,7 +191,7 @@ def runEj3_1():
     plt.plot(xs, y2)
     plt.xlim([-4, 4])
     plt.ylim([-4, 4])
-    plt.show()
+    plt.show() """
 
 # ----------------------------------
 train_set = [
@@ -222,7 +225,7 @@ test_set = [
 test_set_output = [[1], [1], [-1]]
 # ----------------------------------
 def runEj3_2():
-    digits = MultiLayerPerceptron(train_set,train_set_output,0.01, 2, 2)
+    digits = MultiLayerPerceptron(train_set,train_set_output,0.001, 2, 2)
     ws = digits.run()
 
     for st in train_set:

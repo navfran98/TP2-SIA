@@ -16,7 +16,7 @@ class MultiLayerPerceptron:
         self.stimuli = stimuli
         self.out = expected_output
         self.n = learning_rate
-        self.beta = 0.5
+        self.beta = 2
         self.layers = layers
         self.neurons_per_layer = neurons_per_layer
     
@@ -38,31 +38,42 @@ class MultiLayerPerceptron:
         for i in range(0,len(expected_output[0])):
             self.exits.append({})
             self.exits[i]["w"]= np.random.uniform(size=self.neurons_per_layer, low=-1, high=1)
+            self.exits[i]["delta"] = 0
+            self.exits[i]["error"] = 0
         
     def g(self,x):
         return np.tanh(self.beta * x)
     
     def g_dx_dt(self, x):
-        return self.beta * (1 - self.g(x))
+        return self.beta * (1 - ((self.g(x)**2)))
     
     def run(self):
-        error_min = 1000000
-        cota = 100000
+        error_min = [100000]
+        cota = 500000
         i = 0
-        while error_min > 0.0001 and i < cota:
-            u = random.randint(0,len(self.stimuli)-1)
+        u=0
+        error_history = []
+        it = []
+        while error_min[0] > 0.0001 and i < cota:
+            if(u >= len(self.stimuli)):
+                u = 0
             self.propagation(self.stimuli[u],0)
             self.calculate_exit()
             self.backtracking(u)
             self.update_connections(self.layers,u)
+            error_min = self.calculate_error(u)
+            if i%100 == 0:
+                it.append(i)
+                error_history.append(error_min[0])
+            u += 1
             i += 1
 
         ret = []
 
-        for i in range(0, self.layers):
-            for n in self.neurones[i]:
+        for m in range(0, self.layers):
+            for n in self.neurones[m]:
                 ret.append(n["w"])
-        return ret
+        return ret, it, error_history
         # return self.neurones[0][0]["w"], self.neurones[0][1]["w"]
         #Agarro el O. Esta es mi salida, y tengo que sacar el error
             
@@ -104,6 +115,7 @@ class MultiLayerPerceptron:
             for i in range(0,self.neurons_per_layer):
                 if(m == self.layers):
                     for j in range(0,len(self.out[u])):
+                        
                         self.neurones[m-1][i]["delta"] += self.g_dx_dt(self.neurones[m-1][i]["h"])* (self.exits[j]["w"][i] - self.exits[j]["delta"])
                 else:
                     for j in range(0,self.neurons_per_layer):
@@ -134,6 +146,18 @@ class MultiLayerPerceptron:
                     self.neurones[m][i]["w"][j] += self.n * self.neurones[m][i]["delta"] * self.neurones[m-1][j]["v"]
         
         self.update_connections(m-1,u)
+        
+    def update_exit_errors(self):
+        return
+    
+    def calculate_error(self,u):
+        errors  = []
+        for i in range(0,len(self.out[u])):
+            self.exits[i]["error"] = 1/2 * (self.out[u][i] - self.exits[i]["v"])**2
+            errors.append(self.exits[i]["error"])
+        return errors
+            
+            
     
     def propagation_test(self, st):
         return self.propagation_test_rec(st, 0)
@@ -155,20 +179,6 @@ class MultiLayerPerceptron:
                 
         return self.propagation_test_rec(aux,m+1)
         
-
-    def propagation_test2(self,st,w1,w2):
-        aux1 = 0
-        aux2 = 0
-        ret = 0
-        for i in range(0, len(st)):
-            aux1 += st[i] * w1[i]
-            aux2 += st[i] * w2[i]
-        aux = [aux1, aux2]
-        for i in range(0, len(self.exits[0]["w"])):
-            ret += aux[i] * self.exits[0]["w"][i] 
-        return np.tanh(self.beta * ret) 
-        
-
 #----------------------------------
 data = [
     #0
@@ -212,7 +222,7 @@ data_test = [
     #3
     [ 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
     #6
-    [ 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0],
+    [0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0 ],
 ]
 
 data_test_output = [[1], [3], [6]]
@@ -224,5 +234,38 @@ def runEj3_3():
     for st in data_test:
         print(f' -> {digits_v2.propagation_test(st)}')
 #----------------------------------
+def runEj3_1():
+    optimus = MultiLayerPerceptron(stimuli,expected_output,0.01,1,3)
+    ret, it, err = optimus.run()
 
-runEj3_3()
+    for st in optimus.stimuli:
+        print(f'{st} -> {optimus.propagation_test(st)}')
+    
+    """ plt.plot(it,err)
+    plt.semilogy()
+    plt.show() """
+    
+    A=ret[1]
+    B = ret[2]
+    
+    xs = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
+    y1 = []
+    y2 = []
+    for x in xs:
+        y1.append((-A[0] - A[1]*x)/A[2])
+        y2.append((-B[0] - B[1]*x)/B[2])
+
+    plt.scatter(1, 1, color = "red")
+    plt.scatter(1, -1, color = "blue")
+    plt.scatter(-1, 1, color = "blue")
+    plt.scatter(-1, -1, color="red")
+    plt.plot(xs, y1)
+    plt.plot(xs, y2)
+    plt.xlim([-4, 4])
+    plt.ylim([-4, 4])
+    plt.show()  
+
+    
+        
+        
+runEj3_1()
