@@ -77,18 +77,17 @@ class NonLinearPerceptron:
             deltaW = self.calculateDeltaW(self.w,u)
             self.w = np.add(self.w ,deltaW)
             error = self.calculateError(self.w)
+            if i % 10000 == 0:
+                e.append(error)
+                it.append(i)
             if error < error_min:
                 error_min = error
                 w_min = self.w
             i += 1
         if(i >= cota):
             print("Corté por cota")
-            #plt.semilogy()
-            #plt.plot(it[1:], e[1:])
-            #plt.show()
             self.w = w_min
-
-        return w_min
+        return w_min, e, it
 
     def test(self, stimulus):
         ret = 0

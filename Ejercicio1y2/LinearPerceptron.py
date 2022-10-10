@@ -35,15 +35,20 @@ class LinearPerceptron:
         error = 0
         error_min = 10000000000
         cota = 100000
+        e = []
+        it = []
         while error_min > 0 and i < cota:
             u = random.randint(0, len(self.stimulus) - 1)
             deltaW = self.calculateDeltaW(w,u)
             w = np.add(w , deltaW)
             error = self.calculateError(w)
+            if i % 200 == 0:
+                e.append(error)
+                it.append(i)
             if error < error_min:
                 error_min = error
                 w_min = w
             i += 1
         if(i >= cota):
             print("Corté por cota")
-        return w_min
+        return w_min, e, it
