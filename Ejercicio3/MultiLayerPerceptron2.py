@@ -33,6 +33,7 @@ class MultiLayerPerceptron:
                     self.neurones[i][j]["w"] = np.random.uniform(size=neurons_per_layer, low=-1,high=1)
                     
                 self.neurones[i][j]["m"] = i
+                self.neurones[i][j]["delta"] = 0
         
         for i in range(0,len(expected_output[0])):
             self.exits.append({})
@@ -95,11 +96,18 @@ class MultiLayerPerceptron:
                 self.exits[i]["h"] += self.exits[i]["w"][j] * self.neurones[m][j]["v"]
             self.exits[i]["v"] = self.g(self.exits[i]["h"])
     
+    
+    
     def backtracking(self,u):
-        self.calculate_exit_delta(u)
-        for m in reversed(range(0,self.layers)):
+        self.calculate_exit_delta(u)           
+        for m in reversed(range(1,self.layers)):
             for i in range(0,self.neurons_per_layer):
-                self.neurones[m][i]["delta"] = self.g_dx_dt(self.neurones[m][i]["h"])* (self.out[u] - self.neurones[m][i]["v"])
+                if(m == self.layers):
+                    for j in range(0,len(self.out[u])):
+                        self.neurones[m-1][i]["delta"] += self.g_dx_dt(self.neurones[m-1][i]["h"])* (self.exits[j]["w"][i] - self.exits[j]["delta"])
+                else:
+                    for j in range(0,self.neurons_per_layer):
+                        self.neurones[m-1][i]["delta"] += self.g_dx_dt(self.neurones[m-1][i]["h"])* (self.neurones[m][j]["w"][i] - self.neurones[m][j]["delta"])
     
     def calculate_exit_delta(self,u):
         for i in range(0,len(self.out[0])):
@@ -161,73 +169,6 @@ class MultiLayerPerceptron:
         return np.tanh(self.beta * ret) 
         
 
-# ----------------------------------
-def runEj3_1():
-    optimus = MultiLayerPerceptron(stimuli,expected_output,0.01,1,2)
-    w1,w2 = optimus.run()
-
-
-    for st in optimus.stimuli:
-        print(f'{st} -> {optimus.propagation_test2(st,w1,w2)}')
-
-    A = w1
-    B = w2
-
-    xs = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
-    y1 = []
-    y2 = []
-    for x in xs:
-        y1.append((-A[0] - A[1]*x)/A[2])
-        y2.append((-B[0] - B[1]*x)/B[2])
-
-    plt.scatter(1, 1, color = "red")
-    plt.scatter(1, -1, color = "blue")
-    plt.scatter(-1, 1, color = "blue")
-    plt.scatter(-1, -1, color="red")
-    plt.plot(xs, y1)
-    plt.plot(xs, y2)
-    plt.xlim([-4, 4])
-    plt.ylim([-4, 4])
-    plt.show()
-
-# ----------------------------------
-train_set = [
-    #0
-    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0 ],
-    #2
-    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1 ],
-    #4
-    [0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 ],
-    #5
-    [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0 ],
-    #7
-    [1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0 ],
-    #8
-    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
-    #9
-    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0 ],
-]
-
-train_set_output = [[-1], [-1], [-1], [1], [1], [-1], [1]]
-
-test_set = [
-    #1
-    [0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0],
-    #3
-    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
-    #6
-    [0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
-]
-
-test_set_output = [[1], [1], [-1]]
-# ----------------------------------
-def runEj3_2():
-    digits = MultiLayerPerceptron(train_set,train_set_output,0.01, 2, 2)
-    ws = digits.run()
-
-    for st in train_set:
-        print(f' -> {digits.propagation_test(st)}')
-
 #----------------------------------
 data = [
     #0
@@ -253,34 +194,34 @@ data = [
 ]
 
 data_output = [
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [-1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+    [1, -1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, -1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, -1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, -1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, -1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, -1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, -1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, -1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, -1],
 ]
 
 data_test = [
     #1
-    [0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0],
+    [ 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0],
     #3
-    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
+    [ 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
     #6
-    [0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
+    [ 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0],
 ]
 
 data_test_output = [[1], [3], [6]]
 #----------------------------------
 def runEj3_3():
-    digits_v2 = MultiLayerPerceptron(data, data_output,0.01, 2, 2)
+    digits_v2 = MultiLayerPerceptron(data, data_output,0.01, 1, 10)
     ws = digits_v2.run()
 
-    for st in test_set:
+    for st in data_test:
         print(f' -> {digits_v2.propagation_test(st)}')
 #----------------------------------
 

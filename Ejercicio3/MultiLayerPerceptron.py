@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-
 # --- Variables Indexs ---
 # i = indice de la neurona de salida
 # j = indice de la neurona de capa intermedia
@@ -9,172 +8,226 @@ import matplotlib.pyplot as plt
 # m = indice de capa intermedia
 # p = cantidad de datos
 
-# --- Estimulos y outputs ---
-stimulus = [[1,-1, 1],[1,1, -1],[1,-1, -1],[1,1, 1]]
-eOutput = [1,1,-1,-1]
+stimuli = [[1,-1, 1],[1,1, -1],[1,-1, -1],[1,1, 1]]
+expected_output = [[1],[1],[-1],[-1]]
 
-class MultiLayerPerceptronA:
-    def __init__(self, st, out, lr):
-        self.st = st
-        self.out = out
-        self.n = lr
-        self.beta = 1
-        # Matriz con los pesos
-        self.ws =[
-            np.random.uniform(size=2, low=-1, high=1), #W
-            np.random.uniform(size=3, low=-1, high=1), #w1
-            np.random.uniform(size=3, low=-1, high=1), #w2
-        ]
-
+class MultiLayerPerceptron:
+    def __init__(self, stimuli, expected_output, learning_rate,layers,neurons_per_layer):
+        self.stimuli = stimuli
+        self.out = expected_output
+        self.n = learning_rate
+        self.beta = 0.5
+        self.layers = layers
+        self.neurons_per_layer = neurons_per_layer
+    
+        self.neurones = []
+        self.exits = []
+        #Initialize W's with random small numbers
+        for i in range(0,self.layers):
+            self.neurones.append([])
+            for j in range(0,self.neurons_per_layer):
+                self.neurones[i].append({})
+                if(i == 0):
+                    self.neurones[i][j]["w"] = np.random.uniform(size=len(self.stimuli[0]), low=-1, high=1)
+                else:
+                    self.neurones[i][j]["w"] = np.random.uniform(size=neurons_per_layer, low=-1,high=1)
+                    
+                self.neurones[i][j]["m"] = i
+        
+        for i in range(0,len(expected_output[0])):
+            self.exits.append({})
+            self.exits[i]["w"]= np.random.uniform(size=self.neurons_per_layer, low=-1, high=1)
+        
     def g(self,x):
         return np.tanh(self.beta * x)
     
-    def gDerivative(self, x):
+    def g_dx_dt(self, x):
         return self.beta * (1 - self.g(x))
-
-    # def calculateError(self):
-    #     error = 0
-    #     # Por cada estimulo
-    #     for index,u in enumerate(self.st):
-    #         # No tenemos este ciclo for porque solo hay una O (salida)
-    #         eo = self.out[index]
-    #         for idx,W in enumerate(self.ws[0]):
-    #             a = 0
-    #             for index1,w1 in enumerate(self.ws[idx+1]):
-    #                 a += w1 * u[index1]
-    #             # Como estamos usando un perceptron lineal
-    #             # G es la identidad.
-    #             error += (eo - self.g(W*self.g(a)))**2
-                
-    #     return 0.5 * error
-
-    def calculateError(self):
-        error = 0
-        # Por cada estimulo
-        for index,u in enumerate(self.st):
-            # No tenemos este ciclo for porque solo hay una O (salida)
-            eo = self.out[index]
-            a=0
-            for idx,W in enumerate(self.ws[0]):
-                for i in range(1,3):
-                    a += W * u[i]
-                # Como estamos usando un perceptron lineal
-                # G es la identidad.
-            error += (eo - self.g(a))**2
-        return 0.5 * error
-
+    
     def run(self):
-        # V00 v01 v02 serian los 3 valores del stimulo
-        # propago para arriba y calculo V11 V12 y dsp V21 que seria el de salida
-        # calculo el delta para la capa de salida (delta21)
-        # retropropago el delta y obtengo el delta11 y delta12
-        # actualizo todos los pesos wij usando el deltaWij
-        # calculo el error
-        i = 0
-        error = 0
-        error_min = 10000000000
+        error_min = 1000000
         cota = 100000
+        i = 0
         while error_min > 0.0001 and i < cota:
-            # Ovtengo un random self.st[u]
-            u = random.randint(0, len(self.st) - 1)
-            # Obtengo los V0 V1 y V2 al propagar hacia arriba
-            V0 = [self.st[u][0], self.st[u][1], self.st[u][2]]
-            V1, h1 = self.getV1(V0)
-            V2, h2 = self.getV2(V1)
-            # Obtengo el delta de la salida
-            delta_2_1 = self.getDeltaOutput(V2, u, h2)
-            delta_1 = self.getDeltaMid(delta_2_1, h1)
-    
-            self.updateW(delta_2_1, delta_1, V1, V0)
-            error = self.calculateError()
-            if error < error_min:
-                error_min = error
-                w_min = self.ws
+            u = random.randint(0,len(self.stimuli)-1)
+            self.propagation(self.stimuli[u],0)
+            self.calculate_exit()
+            self.backtracking(u)
+            self.update_connections(self.layers,u)
             i += 1
-        if(i >= cota):
-            print("CortÃ© por cota")
-            print(error)
-            print(self.ws)
-            self.w = w_min
-        return w_min
-    
-    def getV1(self, v0s):
-        vs = [0, 0]
-        hs = [0, 0]
-        for i in range(0,2):
-            aux = 0
-            for j in range(0, len(v0s)):
-                aux += self.ws[i+1][j] * v0s[j]
-            vs[i] = self.g(aux)
-            hs[i] = aux
-        return vs, hs
-    
-    def getV2(self, v1s):
-        ret = 0
-        for j in range(0, len(v1s)):
-            ret += self.ws[0][j] * v1s[j]
-        return self.g(ret), ret
 
-    def getDeltaOutput(self, v2, u, h):
-        return self.gDerivative(h) * (self.out[u] - v2)
-    
-    def getDeltaMid(self, delta_2_1, h1):
-        ret = [0, 0]
-        ret[0] = self.gDerivative(h1[0]) * self.ws[0][0] * delta_2_1
-        ret[1] = self.gDerivative(h1[1]) * self.ws[0][1] * delta_2_1
+        ret = []
+
+        for i in range(0, self.layers):
+            for n in self.neurones[i]:
+                ret.append(n["w"])
         return ret
+        # return self.neurones[0][0]["w"], self.neurones[0][1]["w"]
+        #Agarro el O. Esta es mi salida, y tengo que sacar el error
+            
+        #      O1    
+        #    **
+        #   V21 V22
+        #   V11 V12 
+        # V01 V02 V03
+    
+    def propagation(self,prev_layer,m):
+        #neurones[i] = [{"w" : w, "h": h, "v" : v, "m": m}]
+        if(m == self.layers): return
+        
+        for i in range(0,self.neurons_per_layer):
+            self.neurones[m][i]["h"] = 0
+            for j in range(0,len(prev_layer)):
+                if m != 0:
+                    self.neurones[m][i]["h"] += self.neurones[0][i]["w"][j] * prev_layer[j]["v"]
+                if m == 0:
+                    self.neurones[m][i]["h"] += self.neurones[0][i]["w"][j] * prev_layer[j]
+                    
+            self.neurones[m][i]["v"] = self.g(self.neurones[m][i]["h"])
+        
+        self.propagation(self.neurones[m],m+1)
+                
+    def calculate_exit(self):
+        m = self.layers - 1
+        for i in range(0,len(self.out[0])):
+            self.exits[i]["h"] = 0
+            for j in range(0,self.neurons_per_layer):
+                self.exits[i]["h"] += self.exits[i]["w"][j] * self.neurones[m][j]["v"]
+            self.exits[i]["v"] = self.g(self.exits[i]["h"])
+    
+    def backtracking(self,u):
+        self.calculate_exit_delta(u)
+        for m in reversed(range(0,self.layers)):
+            for i in range(0,self.neurons_per_layer):
+                for j in range(0, len(self.out[u])):
+                    self.neurones[m][i]["delta"] = self.g_dx_dt(self.neurones[m][i]["h"]) * (self.out[u][j] - self.neurones[m][i]["v"])
 
-    def updateW(self, d2, d1, v1, v0):
-        deltaW = [[0,0], [0,0,0], [0,0,0]]
-        deltaW[0] = [self.n * d2 * v1[0], self.n * d2 * v1[1]]
-        for i in range(0,2):
-            for j in range(0, len(v0)):
-                deltaW[i+1][j] = self.n * d1[i] * v0[j]
-        for i in range(0, len(self.ws)):
-            for j in range(0, len(self.ws[i])):
-                self.ws[i][j] = self.ws[i][j] + deltaW[i][j]
+    def calculate_exit_delta(self,u):
+        for i in range(0,len(self.out[0])):
+            self.exits[i]["delta"] = self.g_dx_dt(self.exits[i]["h"])*(self.out[u][i] - self.exits[i]["v"])
 
-    def test(self, w, stimulus):
-        ret = 0
-        for i in range(0,len(stimulus)-1):
-            ret += stimulus[i+1] * w[i]
-        return np.tanh(self.beta*ret)
+    def update_exit_connections(self):
+        for i in range(0,len(self.out[0])):
+            for j in range(0,self.neurons_per_layer):
+                self.exits[i]["w"][j] += self.n * self.exits[i]["delta"] * self.neurones[self.layers-1][j]["v"]
+    
+    def update_first_layer(self,u):
+        for i in range(0,self.neurons_per_layer):
+            for j in range(0,len(self.stimuli[0])):
+                self.neurones[0][i]["w"][j] += self.n * self.neurones[0][i]["delta"] * self.stimuli[u][j]
+    
+    def update_connections(self,m,u):
+        if m == 0: return self.update_first_layer(u)
+        if m == self.layers:
+            self.update_exit_connections()
+        else:
+            for i in range(0,self.neurons_per_layer):
+                for j in range(0,self.neurons_per_layer):
+                    # print(self.n * self.neurones[m][i]["delta"] * self.neurones[m-1][j]["v"])
+                    self.neurones[m][i]["w"][j] += self.n * self.neurones[m][i]["delta"] * self.neurones[m-1][j]["v"]
+        self.update_connections(m-1,u)
+    
+    def propagation_test(self, st):
+        return self.propagation_test_rec(st, 0)
 
+    def propagation_test_rec(self,st,m):
+        #neurones[i] = [{"w" : w, "h": h, "v" : v, "m": m}]
+        if(m == self.layers):
+            ret = np.zeros(len(self.out[0]))
+            for j in range(0,len(ret)):
+                for i in range(0,len(st)):
+                    ret[j] +=  self.exits[j]["w"][i] * st[i]
+                ret[j] = np.tanh(self.beta * ret[j])
+            return ret
+        
+        aux = np.zeros(self.neurons_per_layer)
+        for i in range(0,self.neurons_per_layer):
+            for j in range(0,len(st)):
+                aux[i] += self.neurones[m][i]["w"][j] * st[j]
+                
+        return self.propagation_test_rec(aux,m+1)
+        
+
+    def propagation_test2(self,st,w1,w2):
         aux1 = 0
         aux2 = 0
         ret = 0
-        for i range(0, len(w1)):
+        for i in range(0, len(st)):
             aux1 += st[i] * w1[i]
             aux2 += st[i] * w2[i]
-        for i range(0, len(self.exists[0]["w"])):
         aux = [aux1, aux2]
-            ret += aux[i] * self.exists[0]["w"][i]
-        ret += aux[0] * self.exists[0]["w"][1]
-        ret += aux[1] * self.exists[0]["w"][0]
-        return np.tanh(self.beta * ret)
+        for i in range(0, len(self.exits[0]["w"])):
+            ret += aux[i] * self.exits[0]["w"][i] 
+        return np.tanh(self.beta * ret) 
         
 
-A = MultiLayerPerceptronA(stimulus, eOutput, 0.01)
-w_min = A.run()
-for st in stimulus:
-    print(f'{st} -> {A.test(st)}')
+# ----------------------------------
+def runEj3_1():
+    optimus = MultiLayerPerceptron(stimuli,expected_output,0.01,1,2)
+    w1,w2 = optimus.run()
 
-A = w_min[1]
-B = w_min[2]
 
-xs = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
-y1 = []
-y2 = []
-for x in xs:
-    y1.append((-A[0] - A[1]*x)/A[2])
-    y2.append((-B[0] - B[1]*x)/B[2])
+    for st in optimus.stimuli:
+        print(f'{st} -> {optimus.propagation_test2(st,w1,w2)}')
 
-plt.scatter(1, 1)
-plt.scatter(1, -1)
-plt.scatter(-1, 1)
-plt.scatter(-1, -1)
-plt.plot(xs, y1)
-plt.plot(xs, y2)
-plt.xlim([-4, 4])
-plt.ylim([-4, 4])
-plt.show()
+    A = w1
+    B = w2
+
+    xs = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
+    y1 = []
+    y2 = []
+    for x in xs:
+        y1.append((-A[0] - A[1]*x)/A[2])
+        y2.append((-B[0] - B[1]*x)/B[2])
+
+    plt.scatter(1, 1, color = "red")
+    plt.scatter(1, -1, color = "blue")
+    plt.scatter(-1, 1, color = "blue")
+    plt.scatter(-1, -1, color="red")
+    plt.plot(xs, y1)
+    plt.plot(xs, y2)
+    plt.xlim([-4, 4])
+    plt.ylim([-4, 4])
+    plt.show()
+
+# ----------------------------------
+train_set = [
+    #0
+    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0 ],
+    #2
+    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1 ],
+    #4
+    [0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 ],
+    #5
+    [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0 ],
+    #7
+    [1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0 ],
+    #8
+    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
+    #9
+    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0 ],
+]
+
+train_set_output = [[-1], [-1], [-1], [1], [1], [-1], [1]]
+
+test_set = [
+    #1
+    [0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0],
+    #3
+    [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
+    #6
+    [0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0],
+]
+
+test_set_output = [[1], [1], [-1]]
+# ----------------------------------
+def runEj3_2():
+    digits = MultiLayerPerceptron(train_set,train_set_output,0.01, 2, 2)
+    ws = digits.run()
+
+    for st in train_set:
+        print(f' -> {digits.propagation_test(st)}')
+
+#----------------------------------
+
+runEj3_1()
