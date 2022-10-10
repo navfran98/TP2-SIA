@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 # --- Variables Indexs ---
 # i = indice de la neurona de salida
@@ -20,7 +21,7 @@ class MultiLayerPerceptronA:
         self.beta = 1
         # Matriz con los pesos
         self.ws =[
-            [1, -1], #W
+            np.random.uniform(size=2, low=-1, high=1), #W
             np.random.uniform(size=3, low=-1, high=1), #w1
             np.random.uniform(size=3, low=-1, high=1), #w2
         ]
@@ -31,50 +32,36 @@ class MultiLayerPerceptronA:
     def gDerivative(self, x):
         return self.beta * (1 - self.g(x))
 
+    # def calculateError(self):
+    #     error = 0
+    #     # Por cada estimulo
+    #     for index,u in enumerate(self.st):
+    #         # No tenemos este ciclo for porque solo hay una O (salida)
+    #         eo = self.out[index]
+    #         for idx,W in enumerate(self.ws[0]):
+    #             a = 0
+    #             for index1,w1 in enumerate(self.ws[idx+1]):
+    #                 a += w1 * u[index1]
+    #             # Como estamos usando un perceptron lineal
+    #             # G es la identidad.
+    #             error += (eo - self.g(W*self.g(a)))**2
+                
+    #     return 0.5 * error
+
     def calculateError(self):
         error = 0
         # Por cada estimulo
         for index,u in enumerate(self.st):
             # No tenemos este ciclo for porque solo hay una O (salida)
             eo = self.out[index]
+            a=0
             for idx,W in enumerate(self.ws[0]):
-                a = 0
-                for index1,w1 in enumerate(self.ws[idx+1]):
-                    a += w1 * u[index1]
+                for i in range(1,3):
+                    a += W * u[i]
                 # Como estamos usando un perceptron lineal
                 # G es la identidad.
-                error += (eo - self.g(W*self.g(a)))**2
-                
+            error += (eo - self.g(a))**2
         return 0.5 * error
-
-    # Lo revise mil veces creo que esta perfecta
-    # esta funcion, si alguien mas la revisa god
-    def dWOut(self):
-        dW = 0
-        # Por cada entrada
-        for index,u in enumerate(self.st):
-            for idx,W in enumerate(self.ws[0]):
-                a = 0
-                for index1,w1 in enumerate(self.ws[idx+1]):
-                    a += w1 * u[index1]
-                # La derivada esta implicita porque es 1
-                dW += (self.out[index] - self.g(W*self.g(a)))*self.g(a)
-        return self.n * dW
-
-    #vas a querer armar un [,,] 
-    def dWMid(self):
-        dW = [[0,0,0], [0,0,0]]
-        # Por cada entrada
-        for j in range(0, 2):
-            for index,u in enumerate(self.st):
-                dw_aux = 0
-                for idx,W in enumerate(self.ws[0]):
-                    h = 0
-                    for index1,w1 in enumerate(self.ws[idx+1]):
-                        h += w1 * u[index1]
-                dw_aux += (self.out[index] - self.g(h)) * self.ws[0][j] * self.st[index]
-            self.ws[j+1] = self.n * dw_aux
-        
 
     def run(self):
         # V00 v01 v02 serian los 3 valores del stimulo
@@ -147,5 +134,47 @@ class MultiLayerPerceptronA:
             for j in range(0, len(self.ws[i])):
                 self.ws[i][j] = self.ws[i][j] + deltaW[i][j]
 
+    def test(self, w, stimulus):
+        ret = 0
+        for i in range(0,len(stimulus)-1):
+            ret += stimulus[i+1] * w[i]
+        return np.tanh(self.beta*ret)
+
+        aux1 = 0
+        aux2 = 0
+        ret = 0
+        for i range(0, len(w1)):
+            aux1 += st[i] * w1[i]
+            aux2 += st[i] * w2[i]
+        for i range(0, len(self.exists[0]["w"])):
+        aux = [aux1, aux2]
+            ret += aux[i] * self.exists[0]["w"][i]
+        ret += aux[0] * self.exists[0]["w"][1]
+        ret += aux[1] * self.exists[0]["w"][0]
+        return np.tanh(self.beta * ret)
+        
+
 A = MultiLayerPerceptronA(stimulus, eOutput, 0.01)
-A.run()
+w_min = A.run()
+for st in stimulus:
+    print(f'{st} -> {A.test(st)}')
+
+A = w_min[1]
+B = w_min[2]
+
+xs = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
+y1 = []
+y2 = []
+for x in xs:
+    y1.append((-A[0] - A[1]*x)/A[2])
+    y2.append((-B[0] - B[1]*x)/B[2])
+
+plt.scatter(1, 1)
+plt.scatter(1, -1)
+plt.scatter(-1, 1)
+plt.scatter(-1, -1)
+plt.plot(xs, y1)
+plt.plot(xs, y2)
+plt.xlim([-4, 4])
+plt.ylim([-4, 4])
+plt.show()
