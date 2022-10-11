@@ -40,15 +40,15 @@ def makeGIF(errors, it, beta):
         plt.ylabel("Error")
         plt.xlabel("Iterations")
 
-        plt.title("Beta - " + str(beta[i]))
+        plt.title("LearningRate - " + str(beta[i]))
         # plt.ylim(0, 100000)
         plt.semilogy()
         plt.plot(it[1:], errors[i][1:])
-        plt.savefig(f'Ejercicio1y2/PNGs/line-{i}.png')
+        plt.savefig(f'Ejercicio1y2/LR_PNGs/line-{i}.png')
         plt.close()
-    with imageio.get_writer('Ejercicio1y2/PNGs/line.gif', mode='i') as writer:
+    with imageio.get_writer('Ejercicio1y2/LR_PNGs/line.gif', mode='i') as writer:
         for i in range(0, len(errors)):
-            image = imageio.imread(f'Ejercicio1y2/PNGs/line-{i}.png')
+            image = imageio.imread(f'Ejercicio1y2/LR_PNGs/line-{i}.png')
             # Para que el gif no vaya tan rapido cada imagen 
             # la agregamos 5 veces
             for i in range(0,5):
@@ -83,54 +83,18 @@ def runEj2Linear(learningRate):
 
 def runEj2NonLinear(beta, learningRate):
     #Sacar de csv los stimuli ([x1,x2,x3]) y los expected_outputs (y)
-    stimulus, expected_output = parseCSV("./Ejercicio1y2/aprendizaje_2.csv")
+    stimulus, expected_output = parseCSV("./Ejercicio1y2/aprendizaje_1.csv")
     # learningRate = 0.001
     # beta = 0.5
     A = NonLinearPerceptron(stimulus, expected_output, learningRate, beta)
     wmin, e, it = A.run()
 
-    test_stimulus, test_expected = parseCSV("./Ejercicio1y2/testeo_2.csv")
+    test_stimulus, test_expected = parseCSV("./Ejercicio1y2/testeo_1.csv")
     ret = {"x":[], "y":[]}
     for i in range(0, len(test_expected)):
         ret["x"].append(i+1)
         ret["y"].append(abs(A.test(test_stimulus[i])- A.escalate_value(test_expected[i])))
     return wmin, e, it, ret
-
-
-# def makeGIF(hist):
-#     chart_size = 3
-#     dot_size = 25
-#     dot_color_true = 'green'
-#     dot_color_false = 'red'
-#     plt.xlim(-chart_size, chart_size)
-#     plt.ylim(-chart_size, chart_size)
-#     plt.scatter(1, 1, s=dot_size, c=dot_color_true)
-#     plt.scatter(1, -1, s=dot_size, c=dot_color_false)
-#     plt.scatter(-1, 1, s=dot_size, c=dot_color_false)
-#     plt.scatter(-1, -1, s=dot_size, c=dot_color_false)
-#     plt.title("Iteracion - 0")
-#     plt.plot()
-#     plt.savefig(f'PNGs/line-{0}.png')
-#     plt.close()
-#     for i in range(0,len(hist)):
-#         plt.xlim(-chart_size, chart_size)
-#         plt.ylim(-chart_size, chart_size)
-#         plt.scatter(1, 1, s=dot_size, c=dot_color_true)
-#         plt.scatter(1, -1, s=dot_size, c=dot_color_false)
-#         plt.scatter(-1, 1, s=dot_size, c=dot_color_false)
-#         plt.scatter(-1, -1, s=dot_size, c=dot_color_false)
-#         p1, p2 = getLinePointsEj1(hist[i])
-#         plt.title("Iteracion - " + str(i+1))
-#         plt.plot(p1, p2, marker = 'o')
-#         plt.savefig(f'PNGs/line-{i+1}.png')
-#         plt.close()
-#     with imageio.get_writer('line.gif', mode='i') as writer:
-#         for i in range(0, len(hist)+1):
-#             image = imageio.imread(f'PNGs/line-{i}.png')
-#             # Para que el gif no vaya tan rapido cada imagen 
-#             # la agregamos 5 veces
-#             for i in range(0,5):
-#                 writer.append_data(image)
 
 # ---------------------------------------------------------------------------- #
 def graph(x, y):
@@ -139,7 +103,7 @@ def graph(x, y):
     plt.figure(figsize=(7,5))
 
     plt.plot(x, y)
-    # plt.semilogy()
+    plt.semilogy()
     plt.ylabel("Error")
     plt.xlabel("Iterations")
     plt.show()
@@ -155,6 +119,9 @@ def graphScatter(x, y):
     plt.xlabel("Test Stimuli")
     plt.show()
 
+# ---------------------------------------------------------------------------- #
+
+# Ej1-And
 
 # learningRate = 0.5
 # threshold = 0.5
@@ -170,26 +137,35 @@ def graphScatter(x, y):
 # plt.show()
 # graph(it, e)
 
+# Ej1-ExlusiveOr
+
 # learningRate = 0.5
 # threshold = 0.5
 # wmin, e, it = runEj1ExclusiveOr(threshold, learningRate)
 # print(f'WMin -> {wmin}')
 # graph(it, e)
 
+# Ej2-Linear
+
 # learningRate = 0.0001
 # wmin, e, it = runEj2Linear(learningRate)
 # print(f'WMin -> {wmin}')
 # graph(it[1:], e[1:])
 
-learningRate = 0.0001
+# Ej2-NonLinear
+
+# learningRates = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
 # betas = [0.01, 0.05, 0.1, 0.5, 1, 1.5, 2]
+# lr = 0.1
+# beta = 0.5
 # errors = []
-# for b in betas:
-#     wmin, e, it = runEj2NonLinear(b, learningRate)
+# for lr in learningRates:
+#     wmin, e, it, ret = runEj2NonLinear(beta, lr)
 #     errors.append(e)
-# makeGIF(errors, it, betas)
-wmin, e, it, ret = runEj2NonLinear(0.5 ,learningRate)
-print(f'WMin -> {wmin}')
-graphScatter(ret["x"], ret["y"])
+# makeGIF(errors, it, learningRates)
+# wmin, e, it, ret = runEj2NonLinear(beta, learningRate)
+# print(f'WMin -> {wmin}')
+# graph(it[1:], e[1:])
+# graphScatter(ret["x"], ret["y"])
 
 

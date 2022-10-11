@@ -77,7 +77,7 @@ class NonLinearPerceptron:
             deltaW = self.calculateDeltaW(self.w,u)
             self.w = np.add(self.w ,deltaW)
             error = self.calculateError(self.w)
-            if i % 10000 == 0:
+            if i % 1000 == 0:
                 e.append(error)
                 it.append(i)
             if error < error_min:
